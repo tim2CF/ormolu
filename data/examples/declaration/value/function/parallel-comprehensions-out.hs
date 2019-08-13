@@ -23,8 +23,8 @@ baz x y z w =
         == 0
       | c <- -- Baz 1
           z
-            * z -- Baz 2
-            -- Baz 3
+            * -- Baz 2
+            z -- Baz 3
       | d <- w -- Other
       | e <- x * x -- Foo bar
       | f <- -- Foo baz 1
@@ -32,8 +32,8 @@ baz x y z w =
       | h <- z + z * w ^ 2 -- Bar foo
       | i <- -- Bar bar 1
           a
-            + b, -- Bar bar 2
-            -- Bar bar 3
+            + -- Bar bar 2
+            b, -- Bar bar 3
         j <- -- Bar baz 1
           a + b -- Bar baz 2
     ]

@@ -481,7 +481,7 @@ p_hsExpr = \case
           EWildPat NoExt -> backticks
           _ -> id
     placeHanging placement $ do
-      located op (opWrapper . p_hsExpr)
+      dontAttachComments $ located op (opWrapper . p_hsExpr)
       space
       located y p_hsExpr
   NegApp NoExt e _ -> do

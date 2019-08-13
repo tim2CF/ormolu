@@ -5,8 +5,8 @@ foo = bar
 
 main =
   bar
-    $ baz -- bar
-    -- baz
+    $ -- bar
+    baz -- baz
 
 f =
   Foo <$> bar

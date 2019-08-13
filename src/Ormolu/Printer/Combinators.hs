@@ -39,9 +39,12 @@ module Ormolu.Printer.Combinators
     -- ** Literals
   , comma
   , space
+    -- ** Comments
+  , dontAttachComments
   )
 where
 
+import Control.Monad (when)
 import Data.Data (Data)
 import Data.List (intersperse)
 import Data.Text (Text)
@@ -85,7 +88,8 @@ located loc f = do
         case l of
           UnhelpfulSpan _ -> return ()
           RealSrcSpan l' -> g (L l' a)
-  withRealLocated loc spitPrecedingComments
+  canComment <- canAttachComments
+  when canComment $ withRealLocated loc spitPrecedingComments
   let setEnclosingSpan =
         case getLoc loc of
           UnhelpfulSpan _ -> id
@@ -94,7 +98,7 @@ located loc f = do
               then id
               else withEnclosingSpan orf
   setEnclosingSpan $ switchLayout [getLoc loc] (f (unLoc loc))
-  withRealLocated loc spitFollowingComments
+  when canComment $ withRealLocated loc spitFollowingComments
 
 -- | A version of 'located' with arguments flipped.
 

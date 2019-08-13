@@ -24,6 +24,8 @@ module Ormolu.Printer.Internal
   , enterLayout
   , vlayout
     -- * Special helpers for comment placement
+  , dontAttachComments
+  , canAttachComments
   , trimSpanStream
   , nextEltSpan
   , popComment
@@ -75,6 +77,8 @@ data RC = RC
     -- ^ Span of enclosing element of AST
   , rcAnns :: Anns
     -- ^ Collection of annotations
+  , rcAttachComments :: Bool
+    -- ^ Can we attach comments in this construct
   }
 
 -- | State context of 'R'.
@@ -117,6 +121,7 @@ runR debug (R m) sstream cstream anns =
       , rcDebug = debug
       , rcEnclosingSpans = []
       , rcAnns = anns
+      , rcAttachComments = True
       }
     sc = SC
       { scColumn = 0
@@ -259,6 +264,12 @@ vlayout sline mline = do
 
 ----------------------------------------------------------------------------
 -- Special helpers for comment placement
+
+dontAttachComments :: R () -> R ()
+dontAttachComments (R r) =  R (local (\i -> i {rcAttachComments = False}) r)
+
+canAttachComments :: R Bool
+canAttachComments = R $ asks rcAttachComments
 
 -- | Drop elements that begin before or at the same place as given
 -- 'SrcSpan'.
