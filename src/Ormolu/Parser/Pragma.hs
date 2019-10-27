@@ -68,14 +68,15 @@ tokenize input =
     location = mkRealSrcLoc (mkFastString "") 1 1
     buffer = stringToStringBuffer input
     parseState = L.mkPStatePure parserFlags buffer location
-    parserFlags = L.mkParserFlags'
-      ES.empty
-      ES.empty
-      (newSimpleUnitId (ComponentId (mkFastString "")))
-      True
-      True
-      True
-      True
+    parserFlags =
+      L.mkParserFlags'
+        ES.empty
+        ES.empty
+        (newSimpleUnitId (ComponentId (mkFastString "")))
+        True
+        True
+        True
+        True
 
 -- | Haskell lexer.
 pLexer :: L.P [L.Token]

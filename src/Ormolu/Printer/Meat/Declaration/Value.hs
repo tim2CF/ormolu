@@ -1205,9 +1205,9 @@ exprPlacement = \case
     let loc = case p of
           XPat pat -> getLoc pat
           _ -> error "exprPlacement: HsProc: Pat does not contain a location"
-    -- Indentation breaks if pattern is longer than one line and left
-    -- hanging. Consequently, only apply hanging when it is safe.
-     in if isOneLineSpan loc
+     in -- Indentation breaks if pattern is longer than one line and left
+        -- hanging. Consequently, only apply hanging when it is safe.
+        if isOneLineSpan loc
           then Hanging
           else Normal
   _ -> Normal

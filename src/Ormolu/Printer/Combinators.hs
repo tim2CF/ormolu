@@ -1,8 +1,8 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 -- | Printing combinators. The definitions here are presented in such an
 -- order so you can just go through the Haddocks and by the end of the file
@@ -65,11 +65,11 @@ import Control.Monad
 import Data.Data (Data)
 import Data.List (intersperse)
 import Data.Text (Text)
+import GHC (Pat (XPat), XXPat)
 import Ormolu.Printer.Comments
 import Ormolu.Printer.Internal
 import Ormolu.Utils (isModule)
 import SrcLoc
-import GHC (Pat (XPat), XXPat)
 
 ----------------------------------------------------------------------------
 -- Basic

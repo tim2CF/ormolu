@@ -17,10 +17,10 @@ import Data.List (dropWhileEnd)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text (Text)
 import qualified Data.Text as T
+import GHC
 import HsDoc (HsDocString, unpackHDS)
 import qualified Outputable as GHC
 import SrcLoc
-import GHC
 
 -- | Combine all source spans from the given list.
 combineSrcSpans' :: NonEmpty SrcSpan -> SrcSpan

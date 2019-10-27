@@ -1,6 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | Parser for Haskell source code.
@@ -17,14 +17,13 @@ import Control.Monad.IO.Class
 import Data.List ((\\), foldl', isPrefixOf)
 import Data.Maybe (catMaybes)
 import qualified DynFlags as GHC
+import DynFlags as GHC
 import qualified FastString as GHC
 import GHC hiding (IE, UnicodeSyntax)
-import GHC.LanguageExtensions.Type (Extension (..))
 import GHC.DynFlags (baseDynFlags)
-import DynFlags as GHC
-import qualified HscTypes as GHC
-import qualified Panic as GHC
+import GHC.LanguageExtensions.Type (Extension (..))
 import qualified HeaderInfo as GHC
+import qualified HscTypes as GHC
 import qualified Lexer as GHC
 import Ormolu.Config
 import Ormolu.Exception
@@ -32,6 +31,7 @@ import Ormolu.Parser.Anns
 import Ormolu.Parser.CommentStream
 import Ormolu.Parser.Result
 import qualified Outputable as GHC
+import qualified Panic as GHC
 import qualified Parser as GHC
 import qualified StringBuffer as GHC
 
@@ -55,9 +55,10 @@ parseModule Config {..} path input' = liftIO $ do
       Right (w, f) ->
         pure (w, GHC.setGeneralFlag' GHC.Opt_Haddock (setDefaultExts f))
       Left err ->
-        let loc = mkSrcSpan
-                    (mkSrcLoc (GHC.mkFastString path) 1 1)
-                    (mkSrcLoc (GHC.mkFastString path) 1 1)
+        let loc =
+              mkSrcSpan
+                (mkSrcLoc (GHC.mkFastString path) 1 1)
+                (mkSrcLoc (GHC.mkFastString path) 1 1)
          in throwIO (OrmoluParsingFailed loc err)
   when (GHC.xopt Cpp dynFlags && not cfgTolerateCpp) $
     throwIO (OrmoluCppEnabled path)
@@ -162,10 +163,11 @@ setDefaultExts flags = foldl' GHC.xopt_set flags autoExts
 ----------------------------------------------------------------------------
 -- More helpers (taken from HLint)
 
-parsePragmasIntoDynFlags :: DynFlags
-                         -> FilePath
-                         -> String
-                         -> IO (Either String ([GHC.Warn], DynFlags))
+parsePragmasIntoDynFlags ::
+  DynFlags ->
+  FilePath ->
+  String ->
+  IO (Either String ([GHC.Warn], DynFlags))
 parsePragmasIntoDynFlags flags filepath str =
   catchErrors $ do
     let opts = GHC.getOptions flags (GHC.stringToStringBuffer str) filepath
@@ -173,6 +175,8 @@ parsePragmasIntoDynFlags flags filepath str =
     let flags'' = flags' `gopt_set` Opt_KeepRawTokenStream
     return $ Right (warnings, flags'')
   where
-    catchErrors act = GHC.handleGhcException reportErr
-                        (GHC.handleSourceError reportErr act)
+    catchErrors act =
+      GHC.handleGhcException
+        reportErr
+        (GHC.handleSourceError reportErr act)
     reportErr e = return $ Left (show e)
