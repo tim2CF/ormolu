@@ -105,7 +105,6 @@ defltEqnToInstDecl FamEqn {..} = TyFamInstDecl {..}
   where
     eqn = FamEqn {feqn_pats = map HsValArg (tyVarsToTypes feqn_pats), ..}
     tfid_eqn = HsIB {hsib_ext = NoExt, hsib_body = eqn}
-
 defltEqnToInstDecl XFamEqn {} = notImplemented "XFamEqn"
 
 isInfix :: LexicalFixity -> Bool
