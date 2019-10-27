@@ -173,7 +173,6 @@ parsePragmasIntoDynFlags flags filepath str =
     let flags'' = flags' `gopt_set` Opt_KeepRawTokenStream
     return $ Right (warnings, flags'')
   where
-    catchErrors :: IO (Either String DynFlags) -> IO (Either String DynFlags)
     catchErrors act = GHC.handleGhcException reportErr
                         (GHC.handleSourceError reportErr act)
     reportErr e = return $ Left (show e)
