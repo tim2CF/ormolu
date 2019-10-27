@@ -53,7 +53,13 @@ p_hsType' multilineArgs = \case
     located f p_hsType
     breakpoint
     inci (located x p_hsType)
-  HsAppKindTy _ _ _ -> notImplemented "HsAppKindTy"
+  HsAppKindTy _loc f x -> sitcc $ do
+    -- FIXME: either explain why we ignore the _loc, or do something with it
+    located f p_hsType
+    breakpoint
+    inci $ do
+      txt "@"
+      located x p_hsType
   HsFunTy NoExt x y@(L _ y') -> do
     located x p_hsType
     space
