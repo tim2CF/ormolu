@@ -50,9 +50,10 @@ parseModule ::
     )
 parseModule Config {..} path input' = liftIO $ do
   let (input, extraComments) = stripLinePragmas path input'
-  dynFlags <-
+  (warnings, dynFlags) <-
     parsePragmasIntoDynFlags baseDynFlags path input' >>= \case
-      Right flags -> pure (GHC.setGeneralFlag' GHC.Opt_Haddock (setDefaultExts flags))
+      Right (w, f) ->
+        pure (w, GHC.setGeneralFlag' GHC.Opt_Haddock (setDefaultExts f))
       Left err ->
         let loc = mkSrcSpan
                     (mkSrcLoc (GHC.mkFastString path) 1 1)
@@ -71,7 +72,7 @@ parseModule Config {..} path input' = liftIO $ do
                   prCommentStream = comments,
                   prExtensions = exts
                 }
-  return ([], r)
+  return (warnings, r)
 
 -- | Extensions that are not enabled automatically and should be activated
 -- by user.
@@ -164,13 +165,13 @@ setDefaultExts flags = foldl' GHC.xopt_set flags autoExts
 parsePragmasIntoDynFlags :: DynFlags
                          -> FilePath
                          -> String
-                         -> IO (Either String DynFlags)
+                         -> IO (Either String ([GHC.Warn], DynFlags))
 parsePragmasIntoDynFlags flags filepath str =
   catchErrors $ do
     let opts = GHC.getOptions flags (GHC.stringToStringBuffer str) filepath
-    (flags', _, _) <- parseDynamicFilePragma flags opts
+    (flags', _, warnings) <- parseDynamicFilePragma flags opts
     let flags'' = flags' `gopt_set` Opt_KeepRawTokenStream
-    return $ Right flags''
+    return $ Right (warnings, flags'')
   where
     catchErrors :: IO (Either String DynFlags) -> IO (Either String DynFlags)
     catchErrors act = GHC.handleGhcException reportErr
