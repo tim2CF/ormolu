@@ -22,6 +22,7 @@ module Ormolu.Printer.Combinators
     inci,
     located,
     located',
+    locatedPat,
     switchLayout,
     Layout (..),
     vlayout,
@@ -107,6 +108,27 @@ located' ::
   Located a ->
   R ()
 located' = flip located
+
+-- | A version of 'located' that works on 'Pat'.
+--
+-- Starting from GHC 8.8, 'LPat' == 'Pat'. Located 'Pat's are always
+-- constructed with the 'XPat' constructor, containing a @Located Pat@.
+--
+-- Most of the time, we can just use 'p_pat' directly, because it handles
+-- located 'Pat's. However, sometimes we want to use the location to render
+-- something other than the given 'Pat'.
+--
+-- If given 'Pat' does not contain a location, we error out.
+--
+-- This should become unnecessary if
+-- <https://gitlab.haskell.org/ghc/ghc/issues/17330> is ever fixed.
+locatedPat ::
+  Pat ->
+  (Pat -> R ()) ->
+  R ()
+locatedPat = \case
+  XPat p -> located p
+  _ -> error "locatedPat: Pat does not contain a location"
 
 -- | Set layout according to combination of given 'SrcSpan's for a given.
 -- Use this only when you need to set layout based on e.g. combined span of
