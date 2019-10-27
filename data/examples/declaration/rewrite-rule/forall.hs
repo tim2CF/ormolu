@@ -6,3 +6,9 @@
 "fusable/aux" forall x y.
   fusable x (aux y) = faux x y
   #-}
+
+{-# RULES "rd_tyvs" forall a. forall (x :: a). id x = x #-}
+
+{-# RULES "rd_tyvs'" forall f a. forall (x :: f a). id x = x #-}
+
+{-# RULES "rd_tyvs''" forall (a :: *). forall (x :: a). id x = x #-}

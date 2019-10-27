@@ -13,6 +13,7 @@ import Ormolu.Printer.Combinators
 import Ormolu.Printer.Meat.Common
 import Ormolu.Printer.Meat.Declaration.Signature
 import Ormolu.Printer.Meat.Declaration.Value
+import Ormolu.Printer.Meat.Type
 import Ormolu.Utils
 
 p_ruleDecls :: RuleDecls GhcPs -> R ()
@@ -24,10 +25,12 @@ p_ruleDecls = \case
 
 p_ruleDecl :: RuleDecl GhcPs -> R ()
 p_ruleDecl = \case
-  HsRule NoExt ruleName activation _ ruleBndrs lhs rhs -> do
+  HsRule NoExt ruleName activation tyvars ruleBndrs lhs rhs -> do
     located ruleName p_ruleName
     space
     p_activation activation
+    space
+    p_tyvarBndrs tyvars
     space
     p_ruleBndrs ruleBndrs
     breakpoint
@@ -42,6 +45,16 @@ p_ruleDecl = \case
 
 p_ruleName :: (SourceText, RuleName) -> R ()
 p_ruleName (_, name) = atom $ HsString NoSourceText name
+
+p_tyvarBndrs :: Maybe [LHsTyVarBndr (NoGhcTc GhcPs)] -> R ()
+p_tyvarBndrs Nothing = return ()
+p_tyvarBndrs (Just tyvars) =
+  switchLayout (getLoc <$> tyvars) $ do
+    txt "forall"
+    breakpoint
+    inci $ do
+      sitcc $ sep breakpoint (sitcc . located' p_hsTyVarBndr) tyvars
+      txt "."
 
 p_ruleBndrs :: [LRuleBndr GhcPs] -> R ()
 p_ruleBndrs [] = return ()
