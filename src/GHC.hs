@@ -12,7 +12,6 @@ import HsInstances as X ()
 import HsLit as X
 import HsPat as X
 import HsSyn as X
-import HsTypes as X
 import Module as X
 import RdrName as X
 import SrcLoc as X

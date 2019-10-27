@@ -20,7 +20,6 @@ import qualified Data.Text as T
 import GHC
 import HsDoc (HsDocString, unpackHDS)
 import qualified Outputable as GHC
-import SrcLoc
 
 -- | Combine all source spans from the given list.
 combineSrcSpans' :: NonEmpty SrcSpan -> SrcSpan
