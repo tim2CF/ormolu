@@ -1,6 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 -- | Printing combinators. The definitions here are presented in such an
 -- order so you can just go through the Haddocks and by the end of the file
@@ -67,6 +69,7 @@ import Ormolu.Printer.Comments
 import Ormolu.Printer.Internal
 import Ormolu.Utils (isModule)
 import SrcLoc
+import GHC (Pat (XPat), XXPat)
 
 ----------------------------------------------------------------------------
 -- Basic
@@ -123,11 +126,12 @@ located' = flip located
 -- This should become unnecessary if
 -- <https://gitlab.haskell.org/ghc/ghc/issues/17330> is ever fixed.
 locatedPat ::
-  Pat ->
-  (Pat -> R ()) ->
+  (Data (Pat pass), XXPat pass ~ Located (Pat pass)) =>
+  Pat pass ->
+  (Pat pass -> R ()) ->
   R ()
-locatedPat = \case
-  XPat p -> located p
+locatedPat p f = case p of
+  XPat pat -> located pat f
   _ -> error "locatedPat: Pat does not contain a location"
 
 -- | Set layout according to combination of given 'SrcSpan's for a given.
