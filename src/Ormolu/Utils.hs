@@ -79,4 +79,4 @@ typeArgToType :: LHsTypeArg p -> LHsType p
 typeArgToType = \case
   HsValArg tm -> tm
   HsTypeArg _ ty -> ty
-  HsArgPar _ -> error "typeArgToType: HsArgPar"
+  HsArgPar _ -> notImplemented "HsArgPar"

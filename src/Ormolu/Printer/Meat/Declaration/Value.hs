@@ -568,7 +568,7 @@ p_hsExpr' s = \case
           sep breakpoint (located' p_hsExpr) initp
         placeHanging placement $
           located lastp p_hsExpr
-  HsAppType _ e a -> do
+  HsAppType NoExt e a -> do
     located e p_hsExpr
     breakpoint
     inci $ do
@@ -691,7 +691,7 @@ p_hsExpr' s = \case
         (comma >> breakpoint)
         (sitcc . located' (p_hsRecField . updName))
         rupd_flds
-  ExprWithTySig _ x affix -> sitcc $ do
+  ExprWithTySig NoExt x affix -> sitcc $ do
     located x p_hsExpr
     space
     txt "::"
@@ -961,7 +961,7 @@ p_pat = \case
       txt "+"
       space
       located k (atom . ol_val)
-  SigPat _ pat hswc -> do
+  SigPat NoExt pat hswc -> do
     p_pat pat
     p_typeAscription hswc
   CoPat {} -> notImplemented "CoPat" -- apparently created at some later stage
