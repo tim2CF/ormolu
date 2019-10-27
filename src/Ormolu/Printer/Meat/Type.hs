@@ -53,13 +53,15 @@ p_hsType' multilineArgs = \case
     located f p_hsType
     breakpoint
     inci (located x p_hsType)
-  HsAppKindTy _loc f x -> sitcc $ do
-    -- FIXME: either explain why we ignore the _loc, or do something with it
-    located f p_hsType
+  HsAppKindTy _ ty kd -> sitcc $ do
+    -- The first argument is the location of the "@..." part. Not 100% sure,
+    -- but I think we can ignore it as long as we use 'located' on both the
+    -- type and the kind.
+    located ty p_hsType
     breakpoint
     inci $ do
       txt "@"
-      located x p_hsType
+      located kd p_hsType
   HsFunTy NoExt x y@(L _ y') -> do
     located x p_hsType
     space
