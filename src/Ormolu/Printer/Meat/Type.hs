@@ -79,12 +79,6 @@ p_hsType' multilineArgs = \case
   HsOpTy NoExt x op y -> sitcc $ do
     let opTree = OpBranch (tyOpTree x) op (tyOpTree y)
      in p_tyOpTree (reassociateOpTree Just opTree)
-  HsParTy NoExt (L _ t@HsKindSig {}) ->
-    -- NOTE Kind signatures already put parentheses around in all cases, so
-    -- skip this layer of parentheses. The reason for this behavior is that
-    -- parentheses are not always encoded with 'HsParTy', but seem to be
-    -- always necessary when we have kind signatures in place.
-    p_hsType t
   HsParTy NoExt t ->
     parens N (located t p_hsType)
   HsIParamTy NoExt n t -> sitcc $ do
@@ -94,14 +88,12 @@ p_hsType' multilineArgs = \case
     breakpoint
     inci (located t p_hsType)
   HsStarTy NoExt _ -> txt "*"
-  HsKindSig NoExt t k ->
-    -- NOTE Also see the comment for 'HsParTy'.
-    parens N . sitcc $ do
-      located t p_hsType
-      space -- FIXME
-      txt "::"
-      space
-      inci (located k p_hsType)
+  HsKindSig NoExt t k -> sitcc $ do
+    located t p_hsType
+    space -- FIXME
+    txt "::"
+    space
+    inci (located k p_hsType)
   HsSpliceTy NoExt splice -> p_hsSplice splice
   HsDocTy NoExt t str -> do
     p_hsDocString Pipe True str
@@ -229,6 +221,11 @@ tyVarToType :: HsTyVarBndr GhcPs -> HsType GhcPs
 tyVarToType = \case
   UserTyVar NoExt tvar -> HsTyVar NoExt NotPromoted tvar
   KindedTyVar NoExt tvar kind ->
+    -- Note: we always add parentheses because for whatever reason GHC does
+    -- not use HsParTy for left-hand sides of declarations. Please see
+    -- <https://gitlab.haskell.org/ghc/ghc/issues/17404>. This is fine as
+    -- long as 'tyVarToType' does not get applied to right-hand sides of
+    -- declarations.
     HsParTy NoExt $ noLoc $
       HsKindSig NoExt (noLoc (HsTyVar NoExt NotPromoted tvar)) kind
   XTyVarBndr {} -> notImplemented "XTyVarBndr"
