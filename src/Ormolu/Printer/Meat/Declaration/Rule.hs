@@ -24,7 +24,7 @@ p_ruleDecls = \case
 
 p_ruleDecl :: RuleDecl GhcPs -> R ()
 p_ruleDecl = \case
-  HsRule NoExt ruleName activation ruleBndrs lhs rhs -> do
+  HsRule NoExt ruleName activation _ ruleBndrs lhs rhs -> do
     located ruleName p_ruleName
     space
     p_activation activation

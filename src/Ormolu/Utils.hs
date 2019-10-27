@@ -8,6 +8,7 @@ module Ormolu.Utils
     notImplemented,
     showOutputable,
     splitDocString,
+    typeArgToType,
   )
 where
 
@@ -19,6 +20,7 @@ import qualified Data.Text as T
 import HsDoc (HsDocString, unpackHDS)
 import qualified Outputable as GHC
 import SrcLoc
+import GHC
 
 -- | Combine all source spans from the given list.
 combineSrcSpans' :: NonEmpty SrcSpan -> SrcSpan
@@ -72,3 +74,9 @@ splitDocString docStr =
            in if leadingSpace x
                 then dropSpace <$> xs
                 else xs
+
+typeArgToType :: LHsTypeArg p -> LHsType p
+typeArgToType = \case
+  HsValArg tm -> tm
+  HsTypeArg _ ty -> ty
+  HsArgPar _ -> error "typeArgToType: HsArgPar"

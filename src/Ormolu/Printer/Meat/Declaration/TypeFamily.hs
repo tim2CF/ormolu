@@ -89,12 +89,12 @@ p_injectivityAnn (InjectivityAnn a bs) = do
 p_tyFamInstEqn :: TyFamInstEqn GhcPs -> R ()
 p_tyFamInstEqn HsIB {..} = do
   let FamEqn {..} = hsib_body
-  switchLayout (getLoc feqn_tycon : (getLoc <$> feqn_pats)) $
+  switchLayout (getLoc feqn_tycon : (getLoc . typeArgToType <$> feqn_pats)) $
     p_infixDefHelper
       (isInfix feqn_fixity)
       inci
       (p_rdrName feqn_tycon)
-      (located' p_hsType <$> feqn_pats)
+      (located' p_hsType . typeArgToType <$> feqn_pats)
   space
   txt "="
   breakpoint

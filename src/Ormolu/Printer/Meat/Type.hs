@@ -43,7 +43,7 @@ p_hsType' multilineArgs = \case
       _ -> located t p_hsTypeR
   HsTyVar NoExt p n -> do
     case p of
-      Promoted -> do
+      IsPromoted -> do
         txt "'"
         case showOutputable (unLoc n) of
           _ : '\'' : _ -> space
@@ -120,13 +120,13 @@ p_hsType' multilineArgs = \case
     p_conDeclFields fields
   HsExplicitListTy NoExt p xs -> do
     case p of
-      Promoted -> txt "'"
+      IsPromoted -> txt "'"
       NotPromoted -> return ()
     brackets N $ do
       -- If both this list itself and the first element is promoted,
       -- we need to put a space in between or it fails to parse.
       case (p, xs) of
-        (Promoted, ((L _ t) : _)) | isPromoted t -> space
+        (IsPromoted, ((L _ t) : _)) | isPromoted t -> space
         _ -> return ()
       sitcc $ sep (comma >> breakpoint) (sitcc . located' p_hsType) xs
   HsExplicitTupleTy NoExt xs -> do
@@ -144,7 +144,7 @@ p_hsType' multilineArgs = \case
   XHsType (NHsCoreTy t) -> atom t
   where
     isPromoted = \case
-      HsTyVar _ Promoted _ -> True
+      HsTyVar _ IsPromoted _ -> True
       HsExplicitListTy _ _ _ -> True
       HsExplicitTupleTy _ _ -> True
       _ -> False
