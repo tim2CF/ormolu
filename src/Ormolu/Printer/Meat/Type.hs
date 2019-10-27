@@ -13,8 +13,7 @@ module Ormolu.Printer.Meat.Type
   )
 where
 
-import BasicTypes
-import GHC
+import GHC hiding (isPromoted)
 import Ormolu.Printer.Combinators
 import Ormolu.Printer.Meat.Common
 import {-# SOURCE #-} Ormolu.Printer.Meat.Declaration.Value (p_hsSplice, p_stringLit)
@@ -54,6 +53,7 @@ p_hsType' multilineArgs = \case
     located f p_hsType
     breakpoint
     inci (located x p_hsType)
+  HsAppKindTy _ _ _ -> notImplemented "HsAppKindTy"
   HsFunTy NoExt x y@(L _ y') -> do
     located x p_hsType
     space

@@ -109,7 +109,8 @@ library
                     , Ormolu.Printer.Operators
                     , Ormolu.Printer.SpanStream
                     , Ormolu.Utils
-                    , GHC
+  other-modules:      GHC
+                    , GHC.DynFlags
   if flag(dev)
     ghc-options:      -Wall -Werror -Wcompat
                       -Wincomplete-record-updates

@@ -20,10 +20,8 @@ import qualified DynFlags as GHC
 import qualified FastString as GHC
 import GHC hiding (IE, UnicodeSyntax)
 import GHC.LanguageExtensions.Type (Extension (..))
+import GHC.DynFlags (baseDynFlags)
 import DynFlags as GHC
-import qualified Platform as GHC
-import qualified Config as GHC
-import qualified Fingerprint as GHC
 import qualified HscTypes as GHC
 import qualified Panic as GHC
 import qualified HeaderInfo as GHC
@@ -35,7 +33,6 @@ import Ormolu.Parser.CommentStream
 import Ormolu.Parser.Result
 import qualified Outputable as GHC
 import qualified Parser as GHC
-import qualified SrcLoc as GHC
 import qualified StringBuffer as GHC
 
 -- | Parse a complete module from string.
@@ -162,30 +159,7 @@ setDefaultExts flags = foldl' GHC.xopt_set flags autoExts
     allExts = [minBound .. maxBound]
 
 ----------------------------------------------------------------------------
--- Taken from HLint
-
-fakeSettings :: Settings
-fakeSettings = Settings
-  { sTargetPlatform=platform
-  , sPlatformConstants=platformConstants
-  , sProjectVersion=GHC.cProjectVersion
-  , sProgramName="ghc"
-  , sOpt_P_fingerprint=GHC.fingerprint0
-  }
-  where
-    platform =
-      GHC.Platform
-        { platformWordSize=8
-        , platformOS=GHC.OSUnknown
-        , platformUnregisterised=True}
-    platformConstants =
-      PlatformConstants{pc_DYNAMIC_BY_DEFAULT=False,pc_WORD_SIZE=8}
-
-fakeLlvmConfig :: (LlvmTargets, LlvmPasses)
-fakeLlvmConfig = ([], [])
-
-baseDynFlags :: DynFlags
-baseDynFlags = defaultDynFlags fakeSettings fakeLlvmConfig
+-- More helpers (taken from HLint)
 
 parsePragmasIntoDynFlags :: DynFlags
                          -> FilePath
