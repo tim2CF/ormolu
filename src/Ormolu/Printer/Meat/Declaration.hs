@@ -1,8 +1,9 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE PatternSynonyms   #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- | Rendering of declarations.
 module Ormolu.Printer.Meat.Declaration
@@ -11,11 +12,11 @@ module Ormolu.Printer.Meat.Declaration
   )
 where
 
-import Data.List (sort)
-import Data.List.NonEmpty ((<|), NonEmpty (..))
+-- import Data.List (sort)
+import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import GHC hiding (InlinePragma)
-import OccName (occNameFS)
+-- import OccName (occNameFS)
 import Ormolu.Printer.Combinators
 import Ormolu.Printer.Meat.Common
 import Ormolu.Printer.Meat.Declaration.Annotation
@@ -34,7 +35,10 @@ import Ormolu.Printer.Meat.Declaration.Value
 import Ormolu.Printer.Meat.Declaration.Warning
 import Ormolu.Printer.Meat.Type
 import Ormolu.Utils
-import RdrName (rdrNameOcc)
+-- import RdrName (rdrNameOcc)
+
+import Data.Set (Set)
+import qualified Data.Set as E
 
 p_hsDecls :: FamilyStyle -> [LHsDecl GhcPs] -> R ()
 p_hsDecls style decls = sepSemi id $
@@ -54,25 +58,52 @@ p_hsDecls style decls = sepSemi id $
 -- Add a declaration to a group iff it is relevant to either the first or
 -- the last declaration of the group.
 groupDecls :: [LHsDecl GhcPs] -> [NonEmpty (LHsDecl GhcPs)]
-groupDecls [] = []
-groupDecls (l@(L _ DocNext) : xs) =
-  -- If the first element is a doc string for next element, just include it
-  -- in the next block:
-  case groupDecls xs of
-    [] -> [l :| []]
-    (x : xs') -> (l <| x) : xs'
-groupDecls (lhdr : xs) =
-  let -- Pick the first decl as the group header
-      hdr = unLoc lhdr
-      -- Zip rest of the decls with their previous decl
-      zipped = zip (lhdr : xs) xs
-      -- Pick decls from the tail if they are relevant to the group header
-      -- or the previous decl.
-      (grp, rest) = flip span zipped $ \(L _ prev, L _ cur) ->
-        let relevantToHdr = groupedDecls hdr cur
-            relevantToPrev = groupedDecls prev cur
-         in relevantToHdr || relevantToPrev
-   in (lhdr :| map snd grp) : groupDecls (map snd rest)
+groupDecls = go E.empty id
+  where
+    go _ soFar [] = [NE.fromList (soFar [])]
+    go defs soFar (x:xs) =
+      case getGroupingKind (unLoc x) of
+        Definition newDefs -> go (E.union defs newDefs) ((x :) . soFar) xs
+        Decoration decs ->
+          if E.null defs
+            -- If we have not encountered definitions yet, then anything
+            -- goes:
+            then go defs ((x :) . soFar) xs
+            else if E.isSubsetOf decs defs
+              then go defs ((x :) . soFar) xs
+              else NE.fromList (soFar []) : go E.empty (x :) xs
+        HaddockNext ->
+          if E.null defs
+            then go defs ((x :) . soFar) xs
+            else NE.fromList (soFar []) : go E.empty (x :) xs
+        HaddockPrev ->
+          if E.null defs
+            then go defs ((x :) . soFar) xs
+            else NE.fromList (soFar []) : go E.empty (x :) xs
+        SomethingElse ->
+          NE.fromList (soFar []) : go E.empty (x :) xs
+
+-- groupDecls (l@(L _ DocNext) : xs) =
+--   -- If the first element is a doc string for next element, just include it
+--   -- in the next block:
+--   case groupDecls xs of
+--     [] -> [l :| []]
+--     (x : xs') -> (l <| x) : xs'
+-- groupDecls (lhdr : xs) =
+--   let -- Pick the first decl as the group header
+--       -- hdr = unLoc lhdr
+--       -- Zip rest of the decls with their previous decl
+--       zipped = zip (lhdr : xs) xs
+--       -- Pick decls from the tail if they are relevant to the group header
+--       -- or the previous decl.
+--       (grp, rest) = go zipped
+--       go [] = []
+
+-- flip span zipped $ \(L _ prev, L _ cur) ->
+--         let relevantToHdr = groupedDecls hdr cur
+--             relevantToPrev = groupedDecls prev cur
+--          in relevantToHdr || relevantToPrev
+--    in (lhdr :| map snd grp) : groupDecls (map snd rest)
 
 p_hsDecl :: FamilyStyle -> HsDecl GhcPs -> R ()
 p_hsDecl style = \case
@@ -133,36 +164,56 @@ p_derivDecl = \case
   d@DerivDecl {..} -> p_standaloneDerivDecl d
   XDerivDecl _ -> notImplemented "XDerivDecl standalone deriving"
 
--- | Determine if these declarations should be grouped together.
-groupedDecls ::
-  HsDecl GhcPs ->
-  HsDecl GhcPs ->
-  Bool
-groupedDecls (TypeSignature ns) (FunctionBody ns') = ns `intersects` ns'
-groupedDecls x (FunctionBody ns) | Just ns' <- isPragma x = ns `intersects` ns'
-groupedDecls (FunctionBody ns) x | Just ns' <- isPragma x = ns `intersects` ns'
-groupedDecls x (DataDeclaration n) | Just ns <- isPragma x = n `elem` ns
-groupedDecls (DataDeclaration n) x
-  | Just ns <- isPragma x =
-    let f = occNameFS . rdrNameOcc in f n `elem` map f ns
-groupedDecls x y | Just ns <- isPragma x, Just ns' <- isPragma y = ns `intersects` ns'
-groupedDecls x (TypeSignature ns) | Just ns' <- isPragma x = ns `intersects` ns'
-groupedDecls (TypeSignature ns) x | Just ns' <- isPragma x = ns `intersects` ns'
-groupedDecls (PatternSignature ns) (Pattern n) = n `elem` ns
-groupedDecls DocNext _ = True
-groupedDecls _ DocPrev = True
-groupedDecls _ _ = False
+data GroupingKind
+  = Definition (Set RdrName)
+  | Decoration (Set RdrName)
+  | HaddockNext
+  | HaddockPrev
+  | SomethingElse
 
-intersects :: Ord a => [a] -> [a] -> Bool
-intersects a b = go (sort a) (sort b)
-  where
-    go :: Ord a => [a] -> [a] -> Bool
-    go _ [] = False
-    go [] _ = False
-    go (x : xs) (y : ys)
-      | x < y = go xs (y : ys)
-      | x > y = go (x : xs) ys
-      | otherwise = True
+-- |
+getGroupingKind :: HsDecl GhcPs -> GroupingKind
+getGroupingKind = \case
+  TypeSignature ns -> Decoration (E.fromList ns)
+  FunctionBody ns -> Definition (E.fromList ns)
+  DataDeclaration n -> Definition (E.singleton n)
+  PatternSignature ns -> Decoration (E.fromList ns)
+  Pattern n -> Definition (E.singleton n)
+  DocNext -> HaddockNext
+  DocPrev -> HaddockPrev
+  x | Just ns <- isPragma x -> Decoration (E.fromList ns)
+  _ -> SomethingElse
+
+-- | Determine if these declarations should be grouped together.
+-- groupedDecls ::
+--   HsDecl GhcPs ->
+--   HsDecl GhcPs ->
+--   Bool
+-- groupedDecls (TypeSignature ns) (FunctionBody ns') = ns `intersects` ns'
+-- groupedDecls x (FunctionBody ns) | Just ns' <- isPragma x = ns `intersects` ns'
+-- groupedDecls (FunctionBody ns) x | Just ns' <- isPragma x = ns `intersects` ns'
+-- groupedDecls x (DataDeclaration n) | Just ns <- isPragma x = n `elem` ns
+-- groupedDecls (DataDeclaration n) x
+--   | Just ns <- isPragma x =
+--     let f = occNameFS . rdrNameOcc in f n `elem` map f ns
+-- groupedDecls x y | Just ns <- isPragma x, Just ns' <- isPragma y = ns `intersects` ns'
+-- groupedDecls x (TypeSignature ns) | Just ns' <- isPragma x = ns `intersects` ns'
+-- groupedDecls (TypeSignature ns) x | Just ns' <- isPragma x = ns `intersects` ns'
+-- groupedDecls (PatternSignature ns) (Pattern n) = n `elem` ns
+-- groupedDecls DocNext _ = True
+-- groupedDecls _ DocPrev = True
+-- groupedDecls _ _ = False
+
+-- intersects :: Ord a => [a] -> [a] -> Bool
+-- intersects a b = go (sort a) (sort b)
+--   where
+--     go :: Ord a => [a] -> [a] -> Bool
+--     go _ [] = False
+--     go [] _ = False
+--     go (x : xs) (y : ys)
+--       | x < y = go xs (y : ys)
+--       | x > y = go (x : xs) ys
+--       | otherwise = True
 
 -- | Checks if given list of declarations contain a pair which should
 -- be separated by a blank line.
