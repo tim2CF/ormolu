@@ -107,16 +107,24 @@ p_hsType' multilineArgs = \case
   HsDocTy NoExt t str -> do
     p_hsDocString Pipe True str
     located t p_hsType
-  HsBangTy NoExt (HsSrcBang _ u s) t -> do
-    case u of
-      SrcUnpack -> txt "{-# UNPACK #-}" >> space
-      SrcNoUnpack -> txt "{-# NOUNPACK #-}" >> space
-      NoSrcUnpack -> return ()
-    case s of
-      SrcLazy -> txt "~"
-      SrcStrict -> txt "!"
-      NoSrcStrict -> return ()
-    located t p_hsType
+  HsBangTy NoExt (HsSrcBang _ u s) l ->
+    let p_decorations = do
+          case u of
+            SrcUnpack -> txt "{-# UNPACK #-}" >> space
+            SrcNoUnpack -> txt "{-# NOUNPACK #-}" >> space
+            NoSrcUnpack -> return ()
+          case s of
+            SrcLazy -> txt "~"
+            SrcStrict -> txt "!"
+            NoSrcStrict -> return ()
+    in located l $ \case
+      HsDocTy NoExt t str -> do
+        p_hsDocString Pipe True str
+        p_decorations
+        located t p_hsType
+      t -> do
+        p_decorations
+        p_hsType t
   HsRecTy NoExt fields ->
     p_conDeclFields fields
   HsExplicitListTy NoExt p xs -> do

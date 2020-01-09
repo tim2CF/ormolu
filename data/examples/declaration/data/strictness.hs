@@ -5,3 +5,8 @@ module Main where
 data Foo
   = Foo1 !Int {-# UNPACK #-} !Bool {-# NOUNPACK #-} !String
   | Foo2 { a :: {-# UNPACK #-} Maybe Int && Bool }
+
+data X
+  = B
+     !Int -- ^ y
+     C
